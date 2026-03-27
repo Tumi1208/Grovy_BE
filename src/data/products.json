@@ -1,0 +1,122 @@
+[
+  {
+    "id": "grovy-apple-001",
+    "name": "Crisp Apple",
+    "slug": "crisp-apple",
+    "price": 1.29,
+    "category": "Fruits",
+    "description": "Sweet and crunchy apples for snacks, lunch boxes, and salads.",
+    "stock": 34,
+    "imageKey": "apple"
+  },
+  {
+    "id": "grovy-banana-001",
+    "name": "Sweet Banana Bunch",
+    "slug": "sweet-banana-bunch",
+    "price": 1.09,
+    "category": "Fruits",
+    "description": "Ripe bananas that work well for breakfast bowls, smoothies, and quick snacks.",
+    "stock": 41,
+    "imageKey": "banana"
+  },
+  {
+    "id": "grovy-ginger-001",
+    "name": "Fresh Ginger Root",
+    "slug": "fresh-ginger-root",
+    "price": 0.89,
+    "category": "Vegetables",
+    "description": "Fresh ginger for teas, stir-fries, soups, and everyday home cooking.",
+    "stock": 26,
+    "imageKey": "ginger"
+  },
+  {
+    "id": "grovy-shimla-pepper-001",
+    "name": "Green Shimla Pepper",
+    "slug": "green-shimla-pepper",
+    "price": 1.49,
+    "category": "Vegetables",
+    "description": "Crisp green capsicum for curries, pasta sauces, and fresh salad bowls.",
+    "stock": 22,
+    "imageKey": "shimlaPepper"
+  },
+  {
+    "id": "grovy-orange-juice-001",
+    "name": "Orange Juice 1L",
+    "slug": "orange-juice-1l",
+    "price": 3.59,
+    "category": "Beverages",
+    "description": "Bright citrus juice for breakfast, lunch boxes, and chilled pantry staples.",
+    "stock": 18,
+    "imageKey": "orangeJuice"
+  },
+  {
+    "id": "grovy-apple-juice-001",
+    "name": "Apple Juice 1L",
+    "slug": "apple-juice-1l",
+    "price": 3.39,
+    "category": "Beverages",
+    "description": "Smooth apple juice that fits the Grovy demo pantry and beverage shelf.",
+    "stock": 17,
+    "imageKey": "appleJuice"
+  },
+  {
+    "id": "grovy-classic-cola-001",
+    "name": "Classic Cola Can",
+    "slug": "classic-cola-can",
+    "price": 0.99,
+    "category": "Beverages",
+    "description": "Single-serve cola can for snack runs, combo meals, and quick refreshment.",
+    "stock": 44,
+    "imageKey": "cokeClassic"
+  },
+  {
+    "id": "grovy-sprite-can-001",
+    "name": "Lemon Lime Soda Can",
+    "slug": "lemon-lime-soda-can",
+    "price": 0.99,
+    "category": "Beverages",
+    "description": "Crisp lemon-lime soda can that pairs well with lunch and checkout add-ons.",
+    "stock": 39,
+    "imageKey": "spriteCan"
+  },
+  {
+    "id": "grovy-egg-noodles-001",
+    "name": "Egg Noodles",
+    "slug": "egg-noodles",
+    "price": 2.49,
+    "category": "Pantry",
+    "description": "Quick-cook egg noodles for stir-fries, soups, and simple dinner prep.",
+    "stock": 29,
+    "imageKey": "eggNoodles"
+  },
+  {
+    "id": "grovy-pasta-001",
+    "name": "Durum Wheat Pasta",
+    "slug": "durum-wheat-pasta",
+    "price": 2.79,
+    "category": "Pantry",
+    "description": "Reliable pasta staple for weeknight sauces, baked dishes, and meal prep.",
+    "stock": 27,
+    "imageKey": "pasta"
+  },
+  {
+    "id": "grovy-rice-001",
+    "name": "Long Grain Rice",
+    "slug": "long-grain-rice",
+    "price": 5.99,
+    "category": "Pantry",
+    "description": "Versatile long grain rice for family meals, bowls, and side dishes.",
+    "stock": 21,
+    "imageKey": "rice"
+  },
+  {
+    "id": "grovy-chicken-001",
+    "name": "Chicken Breast Cuts",
+    "slug": "chicken-breast-cuts",
+    "price": 6.49,
+    "category": "Meat",
+    "description": "Fresh chicken cuts for grills, curries, stir-fries, and protein-focused meals.",
+    "stock": 16,
+    "imageKey": "chicken"
+  }
+]

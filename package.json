@@ -5,7 +5,10 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "fetch:off": "node scripts/fetch-openfoodfacts.js",
+    "products:check": "node src/scripts/seedProducts.js --dry-run",
+    "seed:products": "node src/scripts/seedProducts.js"
   },
   "keywords": [
     "express",

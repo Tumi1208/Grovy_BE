@@ -2,15 +2,11 @@ const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
   {
-    ownerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
-    shopId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Shop",
-      default: null,
+    id: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
     },
     name: {
       type: String,
@@ -28,7 +24,7 @@ const productSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
-    image: {
+    imageKey: {
       type: String,
       default: "",
       trim: true,
@@ -47,6 +43,16 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
+    },
+    ownerId: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    shopId: {
+      type: String,
+      default: null,
+      trim: true,
     },
   },
   {

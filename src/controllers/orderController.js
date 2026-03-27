@@ -1,7 +1,7 @@
 const { randomUUID } = require("crypto");
 
 const orders = require("../data/orders");
-const products = require("../data/products");
+const { findProductsByIds } = require("../services/productCatalogService");
 
 const getOrders = (req, res) => {
   const { customerId, ownerId, shopId, status } = req.query;
@@ -46,9 +46,16 @@ const getOrderById = (req, res, next) => {
   return res.status(200).json(order);
 };
 
-const createOrder = (req, res, next) => {
-  const { customerId = null, customerName, phone, address, items, totalAmount, status } =
-    req.body;
+const createOrder = async (req, res, next) => {
+  const {
+    customerId = null,
+    customerName,
+    phone,
+    address,
+    items,
+    totalAmount,
+    status,
+  } = req.body;
 
   if (!customerName || !phone || !address) {
     const error = new Error("customerName, phone, and address are required");
@@ -87,35 +94,42 @@ const createOrder = (req, res, next) => {
     return next(error);
   }
 
-  const referencedProducts = items.map((item) =>
-    products.find((product) => product.id === item.productId)
-  );
+  try {
+    const { items: referencedProducts } = await findProductsByIds(
+      items.map((item) => item.productId)
+    );
+    const productIndex = new Map(
+      referencedProducts.map((product) => [product.id, product])
+    );
+    const firstProduct = productIndex.get(items[0]?.productId) || null;
+    const missingProduct = items.find((item) => !productIndex.has(item.productId));
 
-  if (referencedProducts.some((product) => !product)) {
-    const error = new Error("Each order item must reference an existing product");
-    res.status(400);
-    return next(error);
+    if (missingProduct) {
+      const error = new Error("Each order item must reference an existing product");
+      res.status(400);
+      return next(error);
+    }
+
+    const newOrder = {
+      id: randomUUID(),
+      customerId,
+      ownerId: firstProduct?.ownerId || null,
+      shopId: firstProduct?.shopId || null,
+      customerName,
+      phone,
+      address,
+      items,
+      totalAmount,
+      createdAt: new Date().toISOString(),
+      status: status || "pending",
+    };
+
+    orders.push(newOrder);
+
+    return res.status(201).json(newOrder);
+  } catch (error) {
+    next(error);
   }
-
-  const firstProduct = referencedProducts[0];
-
-  const newOrder = {
-    id: randomUUID(),
-    customerId,
-    ownerId: firstProduct?.ownerId || null,
-    shopId: firstProduct?.shopId || null,
-    customerName,
-    phone,
-    address,
-    items,
-    totalAmount,
-    createdAt: new Date().toISOString(),
-    status: status || "pending",
-  };
-
-  orders.push(newOrder);
-
-  return res.status(201).json(newOrder);
 };
 
 module.exports = {
