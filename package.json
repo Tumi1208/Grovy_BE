@@ -9,7 +9,8 @@
     "fetch:off": "node scripts/fetch-openfoodfacts.js",
     "products:check": "node src/scripts/seedProducts.js --dry-run",
     "seed:products": "node src/scripts/seedProducts.js",
-    "seed:users": "node src/scripts/seedUsers.js"
+    "seed:users": "node src/scripts/seedUsers.js",
+    "seed:orders": "node src/scripts/seedOrders.js"
   },
   "keywords": [
     "express",

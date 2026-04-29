@@ -1,60 +1,144 @@
-const { randomUUID } = require("crypto");
+const mongoose = require("mongoose");
 
-const orders = require("../data/orders");
+const Order = require("../models/Order");
 const { findProductsByIds } = require("../services/productCatalogService");
+const ensureDatabaseReady = require("../utils/ensureDatabaseReady");
+const {
+  roundCurrencyAmount,
+  serializeOrder,
+} = require("../utils/serializeOrder");
 
-const getOrders = (req, res) => {
-  const { customerId, ownerId, shopId, status } = req.query;
+function createOrderCode(date = new Date()) {
+  const year = date.getUTCFullYear().toString().slice(-2);
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getUTCDate()}`.padStart(2, "0");
+  const hours = `${date.getUTCHours()}`.padStart(2, "0");
+  const minutes = `${date.getUTCMinutes()}`.padStart(2, "0");
+  const suffix = Math.floor(Math.random() * 900 + 100);
 
-  let filteredOrders = [...orders];
+  return `GRV-${year}${month}${day}-${hours}${minutes}-${suffix}`;
+}
 
-  if (customerId) {
-    filteredOrders = filteredOrders.filter((order) => order.customerId === customerId);
+function buildAddressSnapshot({
+  address,
+  customerName,
+  deliveryAddressSnapshot,
+  phone,
+}) {
+  if (deliveryAddressSnapshot && typeof deliveryAddressSnapshot === "object") {
+    return {
+      id: deliveryAddressSnapshot.id || null,
+      label: deliveryAddressSnapshot.label || "Delivery address",
+      recipientName:
+        deliveryAddressSnapshot.recipientName || customerName || "",
+      phoneNumber: deliveryAddressSnapshot.phoneNumber || phone || "",
+      addressLine: deliveryAddressSnapshot.addressLine || "",
+      area: deliveryAddressSnapshot.area || "",
+      notes: deliveryAddressSnapshot.notes || "",
+      fullAddress:
+        deliveryAddressSnapshot.fullAddress || deliveryAddressSnapshot.address || address,
+    };
   }
 
-  if (ownerId) {
-    filteredOrders = filteredOrders.filter((order) => order.ownerId === ownerId);
+  return {
+    id: null,
+    label: "Delivery address",
+    recipientName: customerName || "",
+    phoneNumber: phone || "",
+    addressLine: "",
+    area: "",
+    notes: "",
+    fullAddress: address || "",
+  };
+}
+
+function buildPaymentMethodSnapshot(paymentMethodSnapshot) {
+  if (!paymentMethodSnapshot || typeof paymentMethodSnapshot !== "object") {
+    return {
+      id: null,
+      type: "cash",
+      title: "Cash on Delivery",
+      meta: "",
+      label: "Cash on Delivery",
+      brand: "",
+      last4: "",
+    };
   }
 
-  if (shopId) {
-    filteredOrders = filteredOrders.filter((order) => order.shopId === shopId);
+  return {
+    id: paymentMethodSnapshot.id || null,
+    type: paymentMethodSnapshot.type || "cash",
+    title: paymentMethodSnapshot.title || "",
+    meta: paymentMethodSnapshot.meta || "",
+    label: paymentMethodSnapshot.label || "",
+    brand: paymentMethodSnapshot.brand || "",
+    last4: paymentMethodSnapshot.last4 || "",
+  };
+}
+
+function findMissingOrderError(next, res) {
+  const error = new Error("Order not found for this account.");
+  error.statusCode = 404;
+  res.status(404);
+  return next(error);
+}
+
+async function findOwnedOrder(orderId, userId) {
+  const filters = [{ orderCode: orderId }];
+
+  if (mongoose.Types.ObjectId.isValid(orderId)) {
+    filters.push({ _id: orderId });
   }
 
-  if (status) {
-    filteredOrders = filteredOrders.filter(
-      (order) => order.status.toLowerCase() === status.toLowerCase()
-    );
-  }
-
-  res.status(200).json({
-    items: filteredOrders,
-    total: filteredOrders.length,
+  return Order.findOne({
+    userId,
+    $or: filters,
   });
-};
+}
 
-const getOrderById = (req, res, next) => {
-  const { orderId } = req.params;
+const getMyOrders = async (req, res, next) => {
+  try {
+    ensureDatabaseReady();
 
-  const order = orders.find((item) => item.id === orderId);
+    const orders = await Order.find({ userId: req.user._id }).sort({
+      createdAt: -1,
+    });
 
-  if (!order) {
-    const error = new Error("Order not found");
-    res.status(404);
+    return res.status(200).json({
+      items: orders.map(serializeOrder),
+      total: orders.length,
+    });
+  } catch (error) {
     return next(error);
   }
+};
 
-  return res.status(200).json(order);
+const getOrderById = async (req, res, next) => {
+  try {
+    ensureDatabaseReady();
+
+    const { orderId } = req.params;
+    const order = await findOwnedOrder(orderId, req.user._id);
+
+    if (!order) {
+      return findMissingOrderError(next, res);
+    }
+
+    return res.status(200).json(serializeOrder(order));
+  } catch (error) {
+    return next(error);
+  }
 };
 
 const createOrder = async (req, res, next) => {
   const {
-    customerId = null,
     customerName,
     phone,
     address,
+    deliveryAddressSnapshot,
+    paymentMethodSnapshot,
     items,
-    totalAmount,
-    status,
+    deliveryFee = 0,
   } = req.body;
 
   if (!customerName || !phone || !address) {
@@ -88,13 +172,9 @@ const createOrder = async (req, res, next) => {
     return next(error);
   }
 
-  if (typeof totalAmount !== "number" || totalAmount < 0) {
-    const error = new Error("totalAmount must be a valid number");
-    res.status(400);
-    return next(error);
-  }
-
   try {
+    ensureDatabaseReady();
+
     const { items: referencedProducts } = await findProductsByIds(
       items.map((item) => item.productId)
     );
@@ -110,30 +190,47 @@ const createOrder = async (req, res, next) => {
       return next(error);
     }
 
-    const newOrder = {
-      id: randomUUID(),
-      customerId,
+    const subtotal = roundCurrencyAmount(
+      items.reduce(
+        (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+        0
+      )
+    );
+    const normalizedDeliveryFee = roundCurrencyAmount(deliveryFee);
+    const totalAmount = roundCurrencyAmount(subtotal + normalizedDeliveryFee);
+    const createdAt = new Date();
+
+    const newOrder = await Order.create({
+      orderCode: createOrderCode(createdAt),
+      userId: req.user._id,
       ownerId: firstProduct?.ownerId || null,
       shopId: firstProduct?.shopId || null,
-      customerName,
-      phone,
-      address,
+      customerName: `${customerName}`.trim(),
+      phone: `${phone}`.trim(),
+      address: `${address}`.trim(),
       items,
+      subtotal,
+      deliveryFee: normalizedDeliveryFee,
       totalAmount,
-      createdAt: new Date().toISOString(),
-      status: status || "pending",
-    };
+      deliveryAddressSnapshot: buildAddressSnapshot({
+        address,
+        customerName,
+        deliveryAddressSnapshot,
+        phone,
+      }),
+      paymentMethodSnapshot: buildPaymentMethodSnapshot(paymentMethodSnapshot),
+      createdAt,
+      status: "pending",
+    });
 
-    orders.push(newOrder);
-
-    return res.status(201).json(newOrder);
+    return res.status(201).json(serializeOrder(newOrder));
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
 module.exports = {
-  getOrders,
+  getMyOrders,
   getOrderById,
   createOrder,
 };

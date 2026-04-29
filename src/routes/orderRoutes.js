@@ -1,14 +1,17 @@
 const express = require("express");
 
 const {
-  getOrders,
+  getMyOrders,
   getOrderById,
   createOrder,
 } = require("../controllers/orderController");
+const { requireAuth } = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 
-router.get("/", getOrders);
+router.use(requireAuth);
+router.get("/me", getMyOrders);
+router.get("/", getMyOrders);
 router.get("/:orderId", getOrderById);
 router.post("/", createOrder);
 

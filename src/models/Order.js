@@ -26,22 +26,115 @@ const orderItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const orderAddressSnapshotSchema = new mongoose.Schema(
+  {
+    id: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    label: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    recipientName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    phoneNumber: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    addressLine: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    area: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    notes: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    fullAddress: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+  },
+  { _id: false }
+);
+
+const orderPaymentMethodSnapshotSchema = new mongoose.Schema(
+  {
+    id: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    type: {
+      type: String,
+      default: "cash",
+      trim: true,
+    },
+    title: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    meta: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    label: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    brand: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    last4: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+  },
+  { _id: false }
+);
+
 const orderSchema = new mongoose.Schema(
   {
-    customerId: {
+    orderCode: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
+    },
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      default: null,
+      required: true,
     },
     ownerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       default: null,
+      trim: true,
     },
     shopId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Shop",
+      type: String,
       default: null,
+      trim: true,
     },
     customerName: {
       type: String,
@@ -67,6 +160,24 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    deliveryFee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    deliveryAddressSnapshot: {
+      type: orderAddressSnapshotSchema,
+      default: null,
+    },
+    paymentMethodSnapshot: {
+      type: orderPaymentMethodSnapshotSchema,
+      default: null,
+    },
     status: {
       type: String,
       default: "pending",
@@ -81,5 +192,8 @@ const orderSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+orderSchema.index({ userId: 1, createdAt: -1 });
+orderSchema.index({ orderCode: 1 }, { unique: true });
 
 module.exports = mongoose.models.Order || mongoose.model("Order", orderSchema);
